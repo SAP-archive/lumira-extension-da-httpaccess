@@ -13,7 +13,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
-	"sort"
+	//"sort"
 	"code.google.com/p/go.net/publicsuffix"
 )
 
@@ -134,6 +134,9 @@ func readData(httpRequest HttpRequest) {
 		Jar: jar,
 	}
 
+	//CHANGE: Read cookies from the jar and append to subsequent requests if you 
+	//are making multiple requests
+
 	//extract individual headers
 	var headers []string
 	var tokens []string
@@ -169,6 +172,13 @@ func readData(httpRequest HttpRequest) {
 
 	//convert the JSON response to CSV
 
+	//CHANGE: checkout the master2 branch if you want to look at a method where
+	//you can hard code the keys you'd like to parse instead of this generic 
+	//read all
+
+	//this method parses all the first level keys in all objects
+	//we ignore nested values and arrays
+
 	var jsonOut []map[string]interface{}
 	//refer to http://blog.golang.org/json-and-go
 
@@ -183,23 +193,51 @@ func readData(httpRequest HttpRequest) {
 	if true {
 		var header []string
 
-		for k, _ := range jsonOut[0] {
-			keys = append(keys, k)
+		for z := range jsonOut {
+			for k, _ := range jsonOut[z] {
+				keys = append(keys, k)
+			}
 		}
-		sort.Strings(keys)
+
+		removeDuplicates(&keys)
+
+		//CHANGE: use sorting  if you need a particular order
+		//sort.Strings(keys)
+
 		for _, l := range keys {
 			header = append(header, l)
 		}
 		csvout.Write(header)
 	}
 
-	//TODO assuming subsequent JSON Objects have the same keys as the first object in the list
+	//
 	for index, _ := range jsonOut {
 		if true {
 			var record []string
 
 			for _, value := range keys {
-				record = append(record, jsonOut[index][value].(string))
+				if jsonOut[index][value] == nil {
+					record = append(record, "")
+				} else {
+					switch v := jsonOut[index][value].(type) {
+					case string:
+						record = append(record, v)
+					case int:
+						record = append(record, strconv.Itoa(v))
+					case float64:
+						record = append(record, strconv.FormatFloat(v, 'f', -1, 64))
+					case bool:
+						if v {
+							record = append(record, "true")	
+						} else {
+							record = append(record, "false")
+						}						
+					default:
+						//applies blank value to null, whitespace, arrays and nested structures in a JSON object
+						//CHANGE: please add custom code here if you want a specific parsing behavior
+						record = append(record, "")
+					}
+				}
 			}
 
 			csvout.Write(record)
@@ -258,6 +296,20 @@ func charEscape(escapeStr string) string {
 func charUnescape(unescapeStr string) string {
 	r := strings.NewReplacer("%0A", "\n", "%0D", "\r", "%22", "\"", "%3B", ";")
 	return r.Replace(unescapeStr)
+}
+
+//remove duplicates in the list
+func removeDuplicates(headers *[]string) {
+	found := make(map[string]bool)
+	j := 0
+	for i, x := range *headers {
+		if !found[x] {
+			found[x] = true
+			(*headers)[j] = (*headers)[i]
+			j++
+		}
+	}
+	*headers = (*headers)[:j]
 }
 
 //main
@@ -327,7 +379,7 @@ func main() {
 					},
 				TextEdit{ 
 					AssignTo: &urlValue,
-					Text: `http://localhost:3000/books.json`,
+					Text: `http://jsonplaceholder.typicode.com/posts`,
 					},
 				Label{
 					Text: `Type`,
