@@ -187,14 +187,42 @@ func readData(httpRequest HttpRequest) {
 
 	//convert the JSON response to CSV
 
-	//CHANGE: checkout the master2 branch if you want to look at a method where
-	//you can hard code the keys you'd like to parse instead of this generic 
-	//read all
+	//CHANGE: please create a struct with the fields you'd like to parse 
+	//from the response
+
+	// JsonUtils from https://github.com/bashtian/jsonutils could save some manual work
+
+	//CHANGE: this would only work for http://jsonplaceholder.typicode.com/users
+	// please update this to your response structure
+	type JsonOut []struct {
+		Address struct {
+			City string `json:"city"`
+			Geo  struct {
+				Lat float64 `json:"lat,string"`
+				Lng float64 `json:"lng,string"`
+			} `json:"geo"`
+			Street  string `json:"street"`
+			Suite   string `json:"suite"`
+			Zipcode string `json:"zipcode"`
+		} `json:"address"`
+		Company struct {
+			Bs          string `json:"bs"`
+			CatchPhrase string `json:"catchPhrase"`
+			Name        string `json:"name"`
+		} `json:"company"`
+		Email    string `json:"email"`
+		Id       int64  `json:"id"`
+		Name     string `json:"name"`
+		Phone    string `json:"phone"`
+		Username string `json:"username"`
+		Website  string `json:"website"`
+	}
 
 	//this method parses all the first level keys in all objects
 	//we ignore nested values and arrays
 
-	var jsonOut []map[string]interface{}
+	//var jsonOut []map[string]interface{}
+	var jsonOut JsonOut;
 	//refer to http://blog.golang.org/json-and-go
 
 	//unmarshal response body to the map
@@ -203,42 +231,28 @@ func readData(httpRequest HttpRequest) {
 	//fmt.Println(jsonOut)
 
 	csvout := csv.NewWriter(os.Stdout)
-	keys := []string{}
-
+	
+	//CHANGE: parsing only a few fields
 	if true {
-		var header []string
-
-		for z := range jsonOut {
-			for k, _ := range jsonOut[z] {
-				keys = append(keys, k)
-			}
-		}
-
-		removeDuplicates(&keys)
-
-		//CHANGE: use sorting  if you need a particular order
-		//sort.Strings(keys)
-
-		for _, l := range keys {
-			header = append(header, l)
-		}
+		header := []string{"username","name","id","email","phone","company_name","city","zipcode"}
 		csvout.Write(header)
 	}
 
-	//
-	for index, _ := range jsonOut {
+	for _, value := range jsonOut {
 		if true {
 			var record []string
 
-			for _, value := range keys {
-				if jsonOut[index][value] == nil {
-					record = append(record, "")
-				} else {
-					switch v := jsonOut[index][value].(type) {
+			//CHANGE: change the list of fields to be parsed
+			//Nested fields can be accessed and inserted into the flat table
+			for _, d:= range []interface{}{ value.Username, value.Name, value.Id, value.Email, value.Phone, value.Company.Name, value.Address.City, value.Address.Zipcode } {
+
+  				switch v := d.(type) {
 					case string:
 						record = append(record, v)
 					case int:
 						record = append(record, strconv.Itoa(v))
+					case int64:
+						record = append(record, strconv.FormatInt(v, 10))
 					case float64:
 						record = append(record, strconv.FormatFloat(v, 'f', -1, 64))
 					case bool:
@@ -246,19 +260,18 @@ func readData(httpRequest HttpRequest) {
 							record = append(record, "true")	
 						} else {
 							record = append(record, "false")
-						}						
+						}
 					default:
 						//applies blank value to null, whitespace, arrays and nested structures in a JSON object
 						//CHANGE: please add custom code here if you want a specific parsing behavior
 						record = append(record, "")
 					}
-				}
 			}
-
 			csvout.Write(record)
 		}
 	}
 	csvout.Flush()
+
 }
 
 func check(e error) {
@@ -394,7 +407,7 @@ func main() {
 					},
 				TextEdit{ 
 					AssignTo: &urlValue,
-					Text: `http://jsonplaceholder.typicode.com/posts`,
+					Text: `http://jsonplaceholder.typicode.com/users`,
 					},
 				Label{
 					Text: `Type`,
