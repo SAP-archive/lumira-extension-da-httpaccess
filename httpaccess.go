@@ -239,6 +239,8 @@ func readData(httpRequest HttpRequest) {
 						record = append(record, v)
 					case int:
 						record = append(record, strconv.Itoa(v))
+					case int64:
+						record = append(record, strconv.FormatInt(v, 10))
 					case float64:
 						record = append(record, strconv.FormatFloat(v, 'f', -1, 64))
 					case bool:
