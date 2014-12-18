@@ -48,7 +48,9 @@ Extras
 * `addExt.bat httpaccess` to copy the generated executable into the `daextensions` folder
 
 ####master2 branch
-* TODO
+* Parse specific keys/nested keys you'd like to use from the response
+* Example code only works with response from `http://jsonplaceholder.typicode.com/users`
+* Please use [JsonUtils](https://github.com/bashtian/jsonutils) to update the `struct` for your response
 
 Resources
 -----------
