@@ -1,5 +1,5 @@
 /*
-Copyright 2014, SAP SE
+Copyright 2015, SAP SE
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import (
 	"net/http/cookiejar"
 	"net/url"
 	//"sort"
-	"code.google.com/p/go.net/publicsuffix"
+	"github.com/hashicorp/go.net/publicsuffix"
 )
 
 const (
